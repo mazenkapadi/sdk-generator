@@ -25,82 +25,44 @@ export default function EndpointDetails({ endpoint }: Props) {
   const errorResponses = responseStatuses.filter(s => !s.startsWith('2'));
   
   return (
-    <article className="space-y-8">
+    <article className="space-y-12">
       {/* Header Section */}
-      <header className="space-y-3 pb-6">
-        <div className="flex items-center gap-3">
-          <span
-            className={`rounded-md px-2.5 py-1 text-xs font-mono font-semibold uppercase ${
-              METHOD_COLORS[endpoint.method] || 'bg-zinc-800 text-zinc-400'
-            }`}
-          >
-            {endpoint.method}
-          </span>
-          <code className="flex-1 text-lg font-mono text-[var(--text-primary)] font-medium">
-            {endpoint.path}
-          </code>
-        </div>
-
+      <header className="space-y-4 pb-8">
         {endpoint.summary && (
-          <h1 className="text-2xl font-semibold text-[var(--text-primary)] leading-tight">
+          <h1 className="text-xl font-medium text-[var(--text-primary)]">
             {endpoint.summary}
           </h1>
         )}
 
+        <div className="flex items-baseline gap-2">
+          <span
+            className={`text-xs font-mono font-semibold uppercase ${
+              endpoint.method === 'GET' ? 'text-blue-600' :
+              endpoint.method === 'POST' ? 'text-green-600' :
+              endpoint.method === 'PUT' ? 'text-yellow-600' :
+              endpoint.method === 'PATCH' ? 'text-orange-600' :
+              endpoint.method === 'DELETE' ? 'text-red-600' : 'text-gray-600'
+            }`}
+          >
+            {endpoint.method}
+          </span>
+          <code className="text-sm font-mono text-[var(--text-secondary)]">
+            {endpoint.path}
+          </code>
+        </div>
+
         {endpoint.description && (
-          <p className="text-[15px] text-[var(--text-secondary)] leading-relaxed max-w-3xl">
+          <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
             {endpoint.description}
           </p>
         )}
-
-        {/* Auto-generated endpoint info */}
-        {!endpoint.description && (
-          <p className="text-[15px] text-[var(--text-secondary)] leading-relaxed max-w-3xl">
-            {endpoint.method === 'GET' && 'Retrieves'}
-            {endpoint.method === 'POST' && 'Creates'}
-            {endpoint.method === 'PUT' && 'Updates'}
-            {endpoint.method === 'PATCH' && 'Partially updates'}
-            {endpoint.method === 'DELETE' && 'Deletes'}
-            {' '}
-            {pathSegments.length > 0 ? pathSegments[pathSegments.length - 1].replace(/[{}]/g, '') : 'resource'}
-            {hasPathParams && ' by identifier'}.
-            {hasRequestBody && ' Requires a request body with the specified fields.'}
-            {successResponses.length > 0 && ` Returns ${successResponses.join(', ')} on success.`}
-          </p>
-        )}
-        
-        <EndpointStatusBadges endpoint={endpoint} size="md" />
-
-        {/* Quick Info Pills */}
-        <div className="flex flex-wrap gap-2 pt-2">
-          {hasPathParams && (
-            <span className="text-xs px-2 py-1 rounded-full bg-[var(--surface)] text-[var(--text-secondary)]">
-              Path parameters required
-            </span>
-          )}
-          {hasQueryParams && (
-            <span className="text-xs px-2 py-1 rounded-full bg-[var(--surface)] text-[var(--text-secondary)]">
-              Query parameters supported
-            </span>
-          )}
-          {hasRequestBody && (
-            <span className="text-xs px-2 py-1 rounded-full bg-[var(--surface)] text-[var(--text-secondary)]">
-              Request body required
-            </span>
-          )}
-          {errorResponses.length > 0 && (
-            <span className="text-xs px-2 py-1 rounded-full bg-[var(--surface)] text-[var(--text-secondary)]">
-              {errorResponses.length} error response{errorResponses.length > 1 ? 's' : ''}
-            </span>
-          )}
-        </div>
       </header>
 
       {/* Parameters */}
       {endpoint.parameters && endpoint.parameters.length > 0 && (
-        <section className="space-y-4">
-          <h2 className="text-lg font-semibold text-[var(--text-primary)]">Parameters</h2>
-          <div className="space-y-2">
+        <section className="space-y-3">
+          <h3 className="text-sm font-medium text-[var(--text-primary)] uppercase tracking-wide">Parameters</h3>
+          <div className="space-y-4">
             {endpoint.parameters.map((param: any, idx: number) => {
               // Auto-generate description if missing
               let autoDescription = '';
@@ -127,26 +89,19 @@ export default function EndpointDetails({ endpoint }: Props) {
               }
 
               return (
-                <div key={idx} className="rounded-lg bg-[var(--surface)] px-6 py-4 space-y-2">
-                  <div className="flex items-center gap-2.5 flex-wrap">
-                    <code className="text-sm font-mono font-semibold text-[var(--text-primary)]">
+                <div key={idx} className="py-3">
+                  <div className="flex items-baseline gap-2 mb-1">
+                    <code className="text-sm font-mono font-medium text-[var(--text-primary)]">
                       {param.name}
                     </code>
-                    {param.required && (
-                      <span className="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-red-50 text-red-600 uppercase tracking-wide">
-                        required
-                      </span>
-                    )}
-                    <span className="px-2 py-0.5 text-[10px] font-medium rounded-full bg-[var(--code-bg)] text-[var(--text-muted)] uppercase tracking-wide">
-                      {param.in}
+                    <span className="text-xs text-[var(--text-muted)]">
+                      {param.schema?.type || 'string'}
                     </span>
-                    {param.schema?.type && (
-                      <span className="text-xs font-mono text-[var(--text-tertiary)]">
-                        {param.schema.type}
-                      </span>
+                    {param.required && (
+                      <span className="text-xs text-red-600">required</span>
                     )}
                   </div>
-                  <p className="text-[13px] text-[var(--text-secondary)] leading-relaxed">
+                  <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
                     {param.description || autoDescription}
                   </p>
                 </div>
@@ -158,8 +113,8 @@ export default function EndpointDetails({ endpoint }: Props) {
 
       {/* Request Body */}
       {endpoint.request_body_schema && (
-        <section className="space-y-4">
-          <h2 className="text-lg font-semibold text-[var(--text-primary)]">Request Body</h2>
+        <section className="space-y-3">
+          <h3 className="text-sm font-medium text-[var(--text-primary)] uppercase tracking-wide">Request Body</h3>
           <SchemaViewer 
             schema={endpoint.request_body_schema} 
             examples={endpoint.examples?.request}
@@ -169,30 +124,26 @@ export default function EndpointDetails({ endpoint }: Props) {
 
       {/* Responses */}
       {endpoint.responses && Object.keys(endpoint.responses).length > 0 && (
-        <section className="space-y-4">
-          <h2 className="text-lg font-semibold text-[var(--text-primary)]">Responses</h2>
-          <div className="space-y-4">
+        <section className="space-y-3">
+          <h3 className="text-sm font-medium text-[var(--text-primary)] uppercase tracking-wide">Returns</h3>
+          <div className="space-y-6">
             {Object.entries(endpoint.responses).map(([status, response]: [string, any]) => (
-              <div key={status} className="rounded-lg bg-[var(--surface)] overflow-hidden">
-                <div className="px-6 py-4">
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm font-mono font-semibold text-[var(--text-primary)]">
-                      {status}
+              <div key={status}>
+                <div className="mb-2">
+                  <span className="text-sm font-mono font-medium text-[var(--text-primary)]">
+                    {status}
+                  </span>
+                  {response.description && (
+                    <span className="text-sm text-[var(--text-secondary)] ml-2">
+                      {response.description}
                     </span>
-                    {response.description && (
-                      <span className="text-[13px] text-[var(--text-secondary)]">
-                        {response.description}
-                      </span>
-                    )}
-                  </div>
+                  )}
                 </div>
                 {response.content?.['application/json']?.schema && (
-                  <div className="px-6 py-5">
-                    <SchemaViewer 
-                      schema={response.content['application/json'].schema}
-                      examples={endpoint.examples?.responses?.[status]}
-                    />
-                  </div>
+                  <SchemaViewer 
+                    schema={response.content['application/json'].schema}
+                    examples={endpoint.examples?.responses?.[status]}
+                  />
                 )}
               </div>
             ))}
