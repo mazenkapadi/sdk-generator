@@ -24,6 +24,9 @@ export async function POST(
             );
         }
 
+        // Type assertion to help TypeScript understand the api object
+        const apiData = api as any;
+
         // Check if AI is enabled
         if (process.env.NEXT_PUBLIC_ENABLE_AI === 'false') {
             return NextResponse.json(
@@ -40,7 +43,7 @@ export async function POST(
         }
 
         // Generate guides using AI
-        const guides = await generateGuides(api.spec_data, api.name);
+        const guides = await generateGuides(apiData.spec_data, apiData.name);
 
         if (guides.length === 0) {
             return NextResponse.json(
