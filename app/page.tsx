@@ -2,17 +2,26 @@ import UploadForm from '@/components/UploadForm';
 import ThemeToggle from '@/components/ThemeToggle';
 import DashboardClient from '@/components/DashboardClient';
 import ArchitectureCards from '@/components/ArchitectureCards';
+import { createClient } from '@/lib/supabase/server';
 
 async function fetchApis() {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-  const res = await fetch(`${baseUrl}/api/docs`, { cache: 'no-store' });
-  
-  if (!res.ok) {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from('apis')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error('Error fetching APIs:', error);
+      return [];
+    }
+    
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching APIs:', error);
     return [];
   }
-  
-  const data = await res.json();
-  return data.data || [];
 }
 
 export default async function Home() {
