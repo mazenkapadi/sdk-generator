@@ -1,0 +1,553 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Workspace Demo API",
+    "version": "1.1.0",
+    "description": "Demo API used to showcase multi-API workspace, semantic search, rich schemas, and multi-content-type try-it."
+  },
+  "servers": [
+    {
+      "url": "https://api.workspace-demo.dev/v1"
+    }
+  ],
+  "tags": [
+    {
+      "name": "auth",
+      "description": "Authentication and session management"
+    },
+    {
+      "name": "users",
+      "description": "User profiles and preferences"
+    },
+    {
+      "name": "files",
+      "description": "File uploads and media"
+    },
+    {
+      "name": "experimental",
+      "description": "Experimental features subject to change"
+    }
+  ],
+  "paths": {
+    "/auth/login": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Log in with email and password",
+        "description": "Authenticates a user using email and password and returns an access token.",
+        "operationId": "loginWithEmail",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              },
+              "examples": {
+                "default": {
+                  "summary": "Standard login",
+                  "value": {
+                    "email": "demo@example.com",
+                    "password": "SuperSecret123"
+                  }
+                }
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Successful login",
+                    "value": {
+                      "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                      "expiresIn": 3600
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "invalidCredentials": {
+                    "value": {
+                      "code": "AUTH_INVALID_CREDENTIALS",
+                      "message": "Email or password is incorrect."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-rate-limit-tier": "standard"
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Log out current session",
+        "description": "Invalidates the current access token.",
+        "operationId": "logout",
+        "responses": {
+          "204": {
+            "description": "Logged out successfully"
+          }
+        },
+        "deprecated": true,
+        "x-endpoint-status": "deprecated",
+        "x-replacement-endpoint": "/auth/sessions/{sessionId}"
+      }
+    },
+    "/users": {
+      "get": {
+        "tags": [
+          "users"
+        ],
+        "summary": "List users",
+        "description": "Returns a paginated list of users.",
+        "operationId": "listUsers",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of users",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserListResponse"
+                },
+                "examples": {
+                  "default": {
+                    "value": {
+                      "items": [
+                        {
+                          "id": "usr_123",
+                          "email": "demo@example.com",
+                          "displayName": "Demo User",
+                          "role": "admin"
+                        }
+                      ],
+                      "page": 1,
+                      "pageSize": 20,
+                      "total": 1
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-rate-limit-tier": "standard"
+      }
+    },
+    "/users/{userId}": {
+      "get": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Get user by ID",
+        "description": "Fetches a single user and their core profile information.",
+        "operationId": "getUserById",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "User not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-rate-limit-tier": "standard"
+      },
+      "patch": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Update user profile",
+        "description": "Updates a subset of user fields.",
+        "operationId": "updateUserProfile",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUserRequest"
+              },
+              "examples": {
+                "updateDisplayName": {
+                  "value": {
+                    "displayName": "New Name"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "User updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          }
+        },
+        "x-rate-limit-tier": "standard"
+      }
+    },
+    "/files/upload": {
+      "post": {
+        "tags": [
+          "files"
+        ],
+        "summary": "Upload a file",
+        "description": "Uploads a file using multipart/form-data.",
+        "operationId": "uploadFile",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "file"
+                ],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "File to upload."
+                  },
+                  "folder": {
+                    "type": "string",
+                    "description": "Optional destination folder."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "File uploaded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FileUploadResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-rate-limit-tier": "burst"
+      }
+    },
+    "/experimental/recommendations": {
+      "get": {
+        "tags": [
+          "experimental"
+        ],
+        "summary": "Get user recommendations",
+        "description": "Returns experimental recommendations for a user. This endpoint is subject to change.",
+        "operationId": "getRecommendations",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Recommendations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecommendationsResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-endpoint-status": "experimental",
+        "x-rate-limit-tier": "low"
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "LoginRequest": {
+        "type": "object",
+        "required": [
+          "email",
+          "password"
+        ],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "User email address."
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "description": "User password."
+          }
+        },
+        "example": {
+          "email": "demo@example.com",
+          "password": "SuperSecret123"
+        }
+      },
+      "LoginResponse": {
+        "type": "object",
+        "required": [
+          "accessToken",
+          "expiresIn"
+        ],
+        "properties": {
+          "accessToken": {
+            "type": "string",
+            "description": "JWT access token."
+          },
+          "expiresIn": {
+            "type": "integer",
+            "description": "Expiration time in seconds."
+          }
+        }
+      },
+      "User": {
+        "type": "object",
+        "required": [
+          "id",
+          "email"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique user identifier."
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "User email address."
+          },
+          "displayName": {
+            "type": "string",
+            "description": "Display name."
+          },
+          "role": {
+            "type": "string",
+            "description": "Role of the user.",
+            "enum": [
+              "admin",
+              "member",
+              "viewer"
+            ]
+          }
+        },
+        "example": {
+          "id": "usr_123",
+          "email": "demo@example.com",
+          "displayName": "Demo User",
+          "role": "admin"
+        }
+      },
+      "UpdateUserRequest": {
+        "type": "object",
+        "properties": {
+          "displayName": {
+            "type": "string",
+            "description": "New display name."
+          },
+          "role": {
+            "type": "string",
+            "description": "New role.",
+            "enum": [
+              "admin",
+              "member",
+              "viewer"
+            ]
+          }
+        }
+      },
+      "UserListResponse": {
+        "type": "object",
+        "required": [
+          "items",
+          "page",
+          "pageSize",
+          "total"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/User"
+            }
+          },
+          "page": {
+            "type": "integer"
+          },
+          "pageSize": {
+            "type": "integer"
+          },
+          "total": {
+            "type": "integer"
+          }
+        }
+      },
+      "FileUploadResponse": {
+        "type": "object",
+        "required": [
+          "fileId",
+          "url"
+        ],
+        "properties": {
+          "fileId": {
+            "type": "string",
+            "description": "Unique file identifier."
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "description": "Public URL of the uploaded file."
+          }
+        }
+      },
+      "RecommendationsResponse": {
+        "type": "object",
+        "required": [
+          "userId",
+          "items"
+        ],
+        "properties": {
+          "userId": {
+            "type": "string"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "title"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "score": {
+                  "type": "number"
+                }
+              }
+            }
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "Error code."
+          },
+          "message": {
+            "type": "string",
+            "description": "Human-readable error message."
+          }
+        }
+      }
+    }
+  }
+}
