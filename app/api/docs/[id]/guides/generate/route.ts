@@ -61,8 +61,8 @@ export async function POST(
             is_ai_generated: true,
         }));
 
-        const {data: insertedGuides, error: insertError} = await supabase
-            .from('guides')
+        const {data: insertedGuides, error: insertError} = await (supabase
+            .from('guides') as any)
             .upsert(guidesToInsert, {
                 onConflict: 'api_id,guide_type',
                 ignoreDuplicates: false,
