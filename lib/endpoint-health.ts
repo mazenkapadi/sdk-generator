@@ -26,7 +26,7 @@ export type HealthBadge = {
  * Extract health and status information from an endpoint's spec data
  */
 export function getEndpointHealth(endpoint: EndpointRecord): EndpointHealth {
-  const spec = endpoint.spec_data as any;
+  const extensions = endpoint.extensions as any;
   
   const health: EndpointHealth = {
     status: null,
@@ -34,22 +34,30 @@ export function getEndpointHealth(endpoint: EndpointRecord): EndpointHealth {
   };
 
   // Check if endpoint is deprecated (standard OpenAPI field)
-  if (spec?.deprecated === true) {
+  if (endpoint.deprecated === true) {
     health.isDeprecated = true;
     health.status = 'deprecated';
   }
 
   // Check for x-status extension (experimental, beta, etc.)
-  if (spec?.['x-status']) {
-    const xStatus = spec['x-status'].toLowerCase();
+  if (extensions?.['x-status']) {
+    const xStatus = extensions['x-status'].toLowerCase();
     if (xStatus === 'experimental' || xStatus === 'beta') {
       health.status = xStatus as 'experimental' | 'beta';
     }
   }
 
+  // Check stability field
+  if (endpoint.stability) {
+    const stability = endpoint.stability.toLowerCase();
+    if (stability === 'experimental' || stability === 'beta') {
+      health.status = stability as 'experimental' | 'beta';
+    }
+  }
+
   // Extract deprecation info from x-deprecation-info extension
-  if (spec?.['x-deprecation-info']) {
-    const depInfo = spec['x-deprecation-info'];
+  if (extensions?.['x-deprecation-info']) {
+    const depInfo = extensions['x-deprecation-info'];
     health.deprecationInfo = {
       deprecationDate: depInfo.deprecation_date,
       sunsetDate: depInfo.sunset_date,
@@ -57,13 +65,22 @@ export function getEndpointHealth(endpoint: EndpointRecord): EndpointHealth {
     };
   }
 
-  // Extract rate limit info from x-rate-limit extension
-  if (spec?.['x-rate-limit']) {
-    const rateLimit = spec['x-rate-limit'];
+  // Extract rate limit info from x-rate-limit extension or rate_limit field
+  if (extensions?.['x-rate-limit']) {
+    const rateLimit = extensions['x-rate-limit'];
     health.rateLimit = {
       requests: rateLimit.requests,
       period: rateLimit.period,
     };
+  } else if (endpoint.rate_limit) {
+    // Parse rate_limit string if it exists (e.g., "100/hour")
+    const match = endpoint.rate_limit.match(/(\d+)\/(\w+)/);
+    if (match) {
+      health.rateLimit = {
+        requests: parseInt(match[1]),
+        period: match[2],
+      };
+    }
   }
 
   // If no special status, it's stable
